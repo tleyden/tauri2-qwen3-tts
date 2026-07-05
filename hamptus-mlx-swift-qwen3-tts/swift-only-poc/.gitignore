@@ -3,3 +3,4 @@
 .models/
 models/
 output/
+.generated/

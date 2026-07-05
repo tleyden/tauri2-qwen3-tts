@@ -3,6 +3,9 @@ import Qwen3TTS
 
 private enum PocError: Error, CustomStringConvertible {
     case missingModel(URL)
+    case missingModelsDirectory(URL)
+    case noSpeakers(String)
+    case cancelledInput
     case processLaunchFailed(String, Int32)
 
     var description: String {
@@ -15,6 +18,18 @@ private enum PocError: Error, CustomStringConvertible {
             Download it first:
               scripts/download-model.sh
             """
+        case let .missingModelsDirectory(url):
+            return """
+            No models found in:
+              \(url.path)
+
+            Download a model first:
+              scripts/download-model.sh
+            """
+        case let .noSpeakers(modelName):
+            return "Model \(modelName) did not report any built-in speakers."
+        case .cancelledInput:
+            return "Input cancelled."
         case let .processLaunchFailed(command, status):
             return "\(command) exited with status \(status)"
         }
@@ -29,14 +44,13 @@ private struct Stopwatch {
     }
 }
 
-private let sampleRate = Qwen3TTSPipeline.sampleRate
-private let samplesPerAcousticFrame = 1_920
-private let defaultText = "Hello from the Swift only Qwen three T T S proof of concept."
-private let defaultSpeaker = "Aiden"
-private let modelDirectoryName = "Qwen3-TTS-12Hz-1.7B-Base-8bit"
-
-@main
 private struct Qwen3TTSPoc {
+    private static let sampleRate = Qwen3TTSPipeline.sampleRate
+    private static let samplesPerAcousticFrame = 1_920
+    private static let defaultText = "Hello from the Swift only Qwen three T T S proof of concept."
+    private static let defaultSpeaker = "Aiden"
+    private static let modelDirectoryName = "Qwen3-TTS-12Hz-1.7B-Base-8bit"
+
     static func main() async {
         do {
             let arguments = Array(CommandLine.arguments.dropFirst())
@@ -47,33 +61,32 @@ private struct Qwen3TTSPoc {
             }
 
             let rootURL = packageRootURL()
-            let outputURL = rootURL.appendingPathComponent("output", isDirectory: true)
-            try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
-
-            let modelURL = rootURL
-                .appendingPathComponent(".models", isDirectory: true)
-                .appendingPathComponent(modelDirectoryName, isDirectory: true)
-            try validateModel(at: modelURL)
-
-            let loadTimer = Stopwatch()
-            print("Loading model: \(modelURL.path)")
-            let pipeline = try Qwen3TTSPipeline(modelPath: modelURL)
-            let loadSeconds = loadTimer.elapsed
-            print("Model loaded in \(formatSeconds(loadSeconds))")
-            print("Available speakers: \(pipeline.availableSpeakers.joined(separator: ", "))")
-            print("Selected speaker: \(defaultSpeaker)")
-            print("Text: \(defaultText)")
 
             if arguments.contains("--stream") {
+                let repositoryRoot = InteractiveCLI.repositoryRoot(packageRoot: rootURL)
+                let outputURL = rootURL.appendingPathComponent("output", isDirectory: true)
+                try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
+
+                let modelURL = repositoryRoot
+                    .appendingPathComponent(".models", isDirectory: true)
+                    .appendingPathComponent(modelDirectoryName, isDirectory: true)
+                try validateModel(at: modelURL)
+
+                let loadTimer = Stopwatch()
+                print("Loading model: \(modelURL.path)")
+                let pipeline = try Qwen3TTSPipeline(modelPath: modelURL)
+                let loadSeconds = loadTimer.elapsed
+                print("Model loaded in \(formatSeconds(loadSeconds))")
+                print("Available speakers: \(pipeline.availableSpeakers.joined(separator: ", "))")
+                print("Selected speaker: \(defaultSpeaker)")
+                print("Text: \(defaultText)")
+
                 try await runStreamingSmokeTest(
                     pipeline: pipeline,
                     outputURL: outputURL.appendingPathComponent("streaming.wav")
                 )
             } else {
-                try runBaselineSmokeTest(
-                    pipeline: pipeline,
-                    outputURL: outputURL.appendingPathComponent("baseline.wav")
-                )
+                try runInteractiveGeneration(rootURL: rootURL)
             }
         } catch {
             fputs("Qwen3TTSPoc failed: \(error)\n", stderr)
@@ -86,12 +99,71 @@ private struct Qwen3TTSPoc {
         Qwen3TTSPoc
 
         Usage:
-          swift run Qwen3TTSPoc             Run baseline non-streaming generation
+          swift run Qwen3TTSPoc             Pick a model and voice, then generate a WAV
           swift run Qwen3TTSPoc --stream    Run streaming generation
 
         One-time setup:
           scripts/download-model.sh
         """)
+    }
+
+    private static func runInteractiveGeneration(rootURL: URL) throws {
+        let models = try InteractiveCLI.discoverModels(packageRoot: rootURL)
+        guard !models.isEmpty else {
+            let repositoryRoot = InteractiveCLI.repositoryRoot(packageRoot: rootURL)
+            throw PocError.missingModelsDirectory(
+                repositoryRoot.appendingPathComponent(".models", isDirectory: true)
+            )
+        }
+
+        guard let model = InteractiveCLI.promptForChoice(
+            title: "Which model?",
+            options: models,
+            label: { $0.name }
+        ) else {
+            throw PocError.cancelledInput
+        }
+
+        try validateModel(at: model.url)
+
+        let loadTimer = Stopwatch()
+        print("Loading model: \(model.url.path)")
+        let pipeline = try Qwen3TTSPipeline(modelPath: model.url)
+        print("Model loaded in \(formatSeconds(loadTimer.elapsed))")
+
+        let speakers = pipeline.availableSpeakers
+        guard !speakers.isEmpty else {
+            throw PocError.noSpeakers(model.name)
+        }
+
+        guard let speaker = InteractiveCLI.promptForChoice(
+            title: "Which voice?",
+            options: speakers,
+            label: { $0 }
+        ) else {
+            throw PocError.cancelledInput
+        }
+
+        guard let text = InteractiveCLI.promptForText(title: "What do you want to say?") else {
+            throw PocError.cancelledInput
+        }
+
+        let generatedDirectory = rootURL.appendingPathComponent(".generated", isDirectory: true)
+        try FileManager.default.createDirectory(at: generatedDirectory, withIntermediateDirectories: true)
+        let outputURL = InteractiveCLI.generatedWavURL(packageRoot: rootURL)
+
+        let generationTimer = Stopwatch()
+        let samples = pipeline.generate(text: text, speaker: speaker)
+        try AudioSampleWriter.write(samples: samples, to: outputURL)
+
+        printMetrics(
+            mode: "interactive",
+            samples: samples,
+            generationSeconds: generationTimer.elapsed,
+            firstAudioSeconds: nil,
+            outputURL: outputURL
+        )
+        print("Generated WAV: \(outputURL.path)")
     }
 
     private static func runBaselineSmokeTest(
@@ -157,7 +229,6 @@ private struct Qwen3TTSPoc {
     private static func validateModel(at modelURL: URL) throws {
         let requiredPaths = [
             modelURL.appendingPathComponent("config.json"),
-            modelURL.appendingPathComponent("tokenizer.json"),
             modelURL.appendingPathComponent("speech_tokenizer", isDirectory: true),
         ]
 
@@ -178,6 +249,19 @@ private struct Qwen3TTSPoc {
         }
 
         if !hasSafetensors {
+            throw PocError.missingModel(modelURL)
+        }
+
+        let hasTokenizerJSON = FileManager.default.fileExists(
+            atPath: modelURL.appendingPathComponent("tokenizer.json").path
+        )
+        let hasTokenizerPair = FileManager.default.fileExists(
+            atPath: modelURL.appendingPathComponent("vocab.json").path
+        ) && FileManager.default.fileExists(
+            atPath: modelURL.appendingPathComponent("merges.txt").path
+        )
+
+        if !hasTokenizerJSON && !hasTokenizerPair {
             throw PocError.missingModel(modelURL)
         }
     }
@@ -252,3 +336,5 @@ private struct Qwen3TTSPoc {
         String(format: "%.3f", value)
     }
 }
+
+await Qwen3TTSPoc.main()

@@ -4,7 +4,7 @@ set -euo pipefail
 MODEL_REPO="https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-1.7B-Base-8bit"
 MODEL_DIR=".models/Qwen3-TTS-12Hz-1.7B-Base-8bit"
 
-cd "$(dirname "$0")/.."
+cd "$(dirname "$0")/../../.."
 
 if ! command -v git-lfs >/dev/null 2>&1 && ! git lfs version >/dev/null 2>&1; then
   cat >&2 <<'EOF'
@@ -40,8 +40,10 @@ Model downloaded to:
   $MODEL_DIR
 
 Run the baseline smoke test with:
+  cd hamptus-mlx-swift-qwen3-tts/swift-only-poc
   swift run Qwen3TTSPoc
 
 Run the streaming smoke test with:
+  cd hamptus-mlx-swift-qwen3-tts/swift-only-poc
   swift run Qwen3TTSPoc --stream
 EOF
