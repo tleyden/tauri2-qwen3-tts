@@ -49,7 +49,7 @@ private struct Qwen3TTSPoc {
     private static let samplesPerAcousticFrame = 1_920
     private static let defaultText = "Hello from the Swift only Qwen three T T S proof of concept."
     private static let defaultSpeaker = "Aiden"
-    private static let modelDirectoryName = "Qwen3-TTS-12Hz-1.7B-Base-8bit"
+    private static let modelDirectoryName = "Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit"
 
     static func main() async {
         do {

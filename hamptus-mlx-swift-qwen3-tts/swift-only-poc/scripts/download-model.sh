@@ -1,10 +1,77 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MODEL_REPO="https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-1.7B-Base-8bit"
-MODEL_DIR=".models/Qwen3-TTS-12Hz-1.7B-Base-8bit"
+HF_BASE_URL="https://huggingface.co"
+DEFAULT_MODEL_8BIT="mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit"
+DEFAULT_MODEL_4BIT="mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-4bit"
 
 cd "$(dirname "$0")/../../.."
+
+model_from_input() {
+  local input="$1"
+
+  input="${input#https://huggingface.co/}"
+  input="${input#http://huggingface.co/}"
+  input="${input%/}"
+
+  if [[ "$input" != */* ]]; then
+    input="mlx-community/$input"
+  fi
+
+  printf '%s\n' "$input"
+}
+
+cat <<EOF
+Choose a Qwen3-TTS model to download:
+
+  1. $DEFAULT_MODEL_8BIT
+     1.7B CustomVoice, named speakers + style/emotion instruct
+
+  2. $DEFAULT_MODEL_4BIT
+     1.7B CustomVoice, smaller 4-bit quantization
+
+Or type a Hugging Face model name, such as:
+  mlx-community/Qwen3-TTS-12Hz-1.7B-CustomVoice-8bit
+
+EOF
+
+read -r -p "Model [1]: " MODEL_CHOICE
+
+case "$MODEL_CHOICE" in
+  "" | "1")
+    MODEL_ID="$DEFAULT_MODEL_8BIT"
+    ;;
+  "2")
+    MODEL_ID="$DEFAULT_MODEL_4BIT"
+    ;;
+  *)
+    MODEL_ID="$(model_from_input "$MODEL_CHOICE")"
+    ;;
+esac
+
+MODEL_REPO="$HF_BASE_URL/$MODEL_ID"
+MODEL_DIR=".models/${MODEL_ID##*/}"
+
+cat <<EOF
+
+About to download:
+  $MODEL_REPO
+
+Destination:
+  $MODEL_DIR
+
+EOF
+
+read -r -p "Download this model? [y/N] " CONFIRM_DOWNLOAD
+
+case "$CONFIRM_DOWNLOAD" in
+  y | Y | yes | YES)
+    ;;
+  *)
+    echo "Download cancelled."
+    exit 0
+    ;;
+esac
 
 if ! command -v git-lfs >/dev/null 2>&1 && ! git lfs version >/dev/null 2>&1; then
   cat >&2 <<'EOF'
