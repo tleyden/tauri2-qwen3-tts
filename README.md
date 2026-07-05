@@ -1,5 +1,3 @@
-# Qwen3-TTS Tauri Prototype
-
 <p align="center">
   <a href="https://deepwiki.com/tleyden/tauri2-qwen3-tts"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
 </p>
@@ -32,7 +30,17 @@ This is the approach used for Gemma 4 in a sibling prototype ([tauri2-local-llm]
 
 Repo: [hamptus/mlx-swift-qwen3-tts](https://github.com/hamptus/mlx-swift-qwen3-tts)
 
-Local implementation: [hamptus-mlx-swift-qwen3-tts](./hamptus-mlx-swift-qwen3-tts) and [qwen3-tts-swift-rs](./qwen3-tts-swift-rs)
+Local implementation:
+
+- [hamptus-mlx-swift-qwen3-tts](./hamptus-mlx-swift-qwen3-tts): Tauri 2 desktop app with the React UI, Rust backend, and Swift-only proof of concept.
+- [qwen3-tts-swift-rs](./qwen3-tts-swift-rs): Rust <-> Swift bridge crate consumed by the Tauri app.
+
+To run the Tauri app after downloading the model from `hamptus-mlx-swift-qwen3-tts/swift-only-poc`:
+
+```bash
+cd hamptus-mlx-swift-qwen3-tts
+bun run tauri dev
+```
 
 #### Strengths
 
@@ -71,5 +79,3 @@ Repo: [AtomGradient/swift-qwen3-tts](https://github.com/AtomGradient/swift-qwen3
 #### Risks
 
 1. Would need to confirm Qwen3-TTS model support directly in mlx-rs rather than going through a Swift wrapper
-
-
