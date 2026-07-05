@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-MODEL_REPO="https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-0.6B-Base-4bit"
-MODEL_DIR="models/Qwen3-TTS-12Hz-0.6B-Base-4bit"
+MODEL_REPO="https://huggingface.co/mlx-community/Qwen3-TTS-12Hz-1.7B-Base-8bit"
+MODEL_DIR=".models/Qwen3-TTS-12Hz-1.7B-Base-8bit"
 
 cd "$(dirname "$0")/.."
 
@@ -17,7 +17,7 @@ EOF
   exit 1
 fi
 
-mkdir -p models
+mkdir -p "$(dirname "$MODEL_DIR")"
 
 if [[ -d "$MODEL_DIR/.git" ]]; then
   echo "Model already exists at $MODEL_DIR"

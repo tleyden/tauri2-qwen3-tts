@@ -33,7 +33,7 @@ private let sampleRate = Qwen3TTSPipeline.sampleRate
 private let samplesPerAcousticFrame = 1_920
 private let defaultText = "Hello from the Swift only Qwen three T T S proof of concept."
 private let defaultSpeaker = "Aiden"
-private let modelDirectoryName = "Qwen3-TTS-12Hz-0.6B-Base-4bit"
+private let modelDirectoryName = "Qwen3-TTS-12Hz-1.7B-Base-8bit"
 
 @main
 private struct Qwen3TTSPoc {
@@ -51,7 +51,7 @@ private struct Qwen3TTSPoc {
             try FileManager.default.createDirectory(at: outputURL, withIntermediateDirectories: true)
 
             let modelURL = rootURL
-                .appendingPathComponent("models", isDirectory: true)
+                .appendingPathComponent(".models", isDirectory: true)
                 .appendingPathComponent(modelDirectoryName, isDirectory: true)
             try validateModel(at: modelURL)
 
@@ -157,7 +157,6 @@ private struct Qwen3TTSPoc {
     private static func validateModel(at modelURL: URL) throws {
         let requiredPaths = [
             modelURL.appendingPathComponent("config.json"),
-            modelURL.appendingPathComponent("model.safetensors"),
             modelURL.appendingPathComponent("tokenizer.json"),
             modelURL.appendingPathComponent("speech_tokenizer", isDirectory: true),
         ]
@@ -167,6 +166,18 @@ private struct Qwen3TTSPoc {
         }
 
         if missingPath != nil {
+            throw PocError.missingModel(modelURL)
+        }
+
+        let modelFiles = try FileManager.default.contentsOfDirectory(
+            at: modelURL,
+            includingPropertiesForKeys: nil
+        )
+        let hasSafetensors = modelFiles.contains {
+            $0.pathExtension == "safetensors"
+        }
+
+        if !hasSafetensors {
             throw PocError.missingModel(modelURL)
         }
     }
