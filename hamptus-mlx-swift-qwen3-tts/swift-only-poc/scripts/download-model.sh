@@ -35,7 +35,8 @@ Or type a Hugging Face model name, such as:
 
 EOF
 
-read -r -p "Model [1]: " MODEL_CHOICE
+printf 'Model [1]: '
+IFS= read -r MODEL_CHOICE
 
 case "$MODEL_CHOICE" in
   "" | "1")
@@ -62,7 +63,8 @@ Destination:
 
 EOF
 
-read -r -p "Download this model? [y/N] " CONFIRM_DOWNLOAD
+printf 'Download this model? [y/N] '
+IFS= read -r CONFIRM_DOWNLOAD
 
 case "$CONFIRM_DOWNLOAD" in
   y | Y | yes | YES)

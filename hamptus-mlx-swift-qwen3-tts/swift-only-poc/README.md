@@ -67,13 +67,17 @@ The MLX package has a plugin named `CudaBuild`, but on macOS it prints `CUDA is 
 
 ## Run From The Shell
 
-After a successful `xcodebuild`, run the Xcode-built binary with `DYLD_FRAMEWORK_PATH` pointing at Xcode's build products:
+After a successful `xcodebuild`, run the Xcode-built binary with:
 
 ```bash
 cd /Users/tleyden/Development/tauri2-qwen3-tts/hamptus-mlx-swift-qwen3-tts/swift-only-poc
+scripts/run.sh
+```
 
-BUILD_DIR="$HOME/Library/Developer/Xcode/DerivedData/swift-only-poc-fmhvmtkwonqmqoebsajlnhrblhhe/Build/Products/Debug"
-DYLD_FRAMEWORK_PATH="$BUILD_DIR:$BUILD_DIR/PackageFrameworks" "$BUILD_DIR/Qwen3TTSPoc"
+The script sets `DYLD_FRAMEWORK_PATH` for the Xcode build products. If Xcode uses a different DerivedData path, pass it explicitly:
+
+```bash
+BUILD_DIR=/path/to/Build/Products/Debug scripts/run.sh
 ```
 
 Expected first prompt:
