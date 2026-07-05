@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
+import podcastScript from "../swift-only-poc/test_data/podcast_script.txt?raw";
 
 function App() {
   const [speakers, setSpeakers] = useState<string[]>([]);
@@ -56,6 +57,13 @@ function App() {
           synthesize();
         }}
       >
+        <button
+          type="button"
+          className="sample-content-link"
+          onClick={() => setText(podcastScript)}
+        >
+          insert sample content
+        </button>
         <textarea
           className="text-input"
           value={text}
