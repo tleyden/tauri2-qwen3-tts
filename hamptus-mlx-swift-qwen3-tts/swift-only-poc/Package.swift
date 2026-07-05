@@ -23,5 +23,9 @@ let package = Package(
                 .product(name: "Qwen3TTS", package: "mlx-swift-qwen3-tts"),
             ]
         ),
+        .testTarget(
+            name: "Qwen3TTSPocTests",
+            dependencies: ["Qwen3TTSPoc"]
+        ),
     ]
 )

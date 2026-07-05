@@ -5,6 +5,7 @@ private enum PocError: Error, CustomStringConvertible {
     case missingModel(URL)
     case missingModelsDirectory(URL)
     case noSpeakers(String)
+    case unknownSpeaker(String, available: [String])
     case cancelledInput
     case processLaunchFailed(String, Int32)
 
@@ -28,6 +29,12 @@ private enum PocError: Error, CustomStringConvertible {
             """
         case let .noSpeakers(modelName):
             return "Model \(modelName) did not report any built-in speakers."
+        case let .unknownSpeaker(speaker, available):
+            return """
+            Speaker \(speaker) was not reported by the loaded model.
+            Available speakers:
+              \(available.joined(separator: ", "))
+            """
         case .cancelledInput:
             return "Input cancelled."
         case let .processLaunchFailed(command, status):
@@ -85,6 +92,9 @@ private struct Qwen3TTSPoc {
                     pipeline: pipeline,
                     outputURL: outputURL.appendingPathComponent("streaming.wav")
                 )
+            } else if arguments.contains("--text-file") {
+                let request = try GenerationRequest.parse(arguments: arguments)
+                try runBatchGeneration(request: request, rootURL: rootURL)
             } else {
                 try runInteractiveGeneration(rootURL: rootURL)
             }
@@ -101,6 +111,8 @@ private struct Qwen3TTSPoc {
         Usage:
           swift run Qwen3TTSPoc             Pick a model and voice, then generate a WAV
           swift run Qwen3TTSPoc --stream    Run streaming generation
+          swift run Qwen3TTSPoc --model MODEL --speaker SPEAKER --text-file PATH --output PATH
+                                            Generate a WAV from a text file
 
         One-time setup:
           scripts/download-model.sh
@@ -158,6 +170,48 @@ private struct Qwen3TTSPoc {
 
         printMetrics(
             mode: "interactive",
+            samples: samples,
+            generationSeconds: generationTimer.elapsed,
+            firstAudioSeconds: nil,
+            outputURL: outputURL
+        )
+        print("Generated WAV: \(outputURL.path)")
+    }
+
+    private static func runBatchGeneration(request: GenerationRequest, rootURL: URL) throws {
+        let repositoryRoot = InteractiveCLI.repositoryRoot(packageRoot: rootURL)
+        let modelURL = repositoryRoot
+            .appendingPathComponent(".models", isDirectory: true)
+            .appendingPathComponent(request.modelName, isDirectory: true)
+        try validateModel(at: modelURL)
+
+        let loadTimer = Stopwatch()
+        print("Loading model: \(modelURL.path)")
+        let pipeline = try Qwen3TTSPipeline(modelPath: modelURL)
+        print("Model loaded in \(formatSeconds(loadTimer.elapsed))")
+
+        let speakers = pipeline.availableSpeakers
+        guard speakers.contains(request.speaker) else {
+            throw PocError.unknownSpeaker(request.speaker, available: speakers)
+        }
+
+        let text = try request.loadText(relativeTo: rootURL)
+        let outputURL = request.outputURL(relativeTo: rootURL)
+        try FileManager.default.createDirectory(
+            at: outputURL.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
+
+        print("Selected speaker: \(request.speaker)")
+        print("Text file: \(request.textFilePath)")
+        print("Characters: \(text.count)")
+
+        let generationTimer = Stopwatch()
+        let samples = pipeline.generate(text: text, speaker: request.speaker)
+        try AudioSampleWriter.write(samples: samples, to: outputURL)
+
+        printMetrics(
+            mode: "batch",
             samples: samples,
             generationSeconds: generationTimer.elapsed,
             firstAudioSeconds: nil,

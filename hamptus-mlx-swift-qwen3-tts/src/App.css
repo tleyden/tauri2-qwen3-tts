@@ -22,12 +22,15 @@
 }
 
 .container {
-  margin: 0;
-  padding-top: 10vh;
+  box-sizing: border-box;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 32px;
+  width: min(100%, 1100px);
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  text-align: center;
+  gap: 18px;
+  text-align: left;
 }
 
 .logo {
@@ -58,9 +61,11 @@ a:hover {
 
 h1 {
   text-align: center;
+  margin: 0 0 8px;
 }
 
 input,
+textarea,
 button {
   border-radius: 8px;
   border: 1px solid transparent;
@@ -87,12 +92,43 @@ button:active {
 }
 
 input,
+textarea,
 button {
   outline: none;
 }
 
-#greet-input {
-  margin-right: 5px;
+.editor-form {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.text-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 55vh;
+  flex: 1;
+  resize: vertical;
+  overflow-y: auto;
+  line-height: 1.5;
+  font-weight: 400;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+p {
+  min-height: 24px;
+  margin: 0;
+  text-align: center;
+}
+
+audio {
+  width: 100%;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -106,6 +142,7 @@ button {
   }
 
   input,
+  textarea,
   button {
     color: #ffffff;
     background-color: #0f0f0f98;

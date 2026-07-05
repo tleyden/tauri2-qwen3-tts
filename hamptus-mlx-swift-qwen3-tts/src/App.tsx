@@ -50,18 +50,20 @@ function App() {
       </div>
 
       <form
-        className="row"
+        className="editor-form"
         onSubmit={(e) => {
           e.preventDefault();
           synthesize();
         }}
       >
-        <input
+        <textarea
+          className="text-input"
           value={text}
           onChange={(e) => setText(e.currentTarget.value)}
-          style={{ width: "24em" }}
         />
-        <button type="submit">Synthesize</button>
+        <div className="actions">
+          <button type="submit">Synthesize</button>
+        </div>
       </form>
 
       <p>{status}</p>
