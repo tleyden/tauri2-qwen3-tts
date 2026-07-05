@@ -1,6 +1,16 @@
+# Qwen3-TTS Tauri Prototype
+
+<p align="center">
+  <a href="https://deepwiki.com/tleyden/tauri2-qwen3-tts"><img src="https://deepwiki.com/badge.svg" alt="Ask DeepWiki"></a>
+</p>
+
+<p align="center">
+  <img src="./AppScreenshot.png" alt="Screenshot of the Qwen3-TTS Tauri prototype app" width="900">
+</p>
+
 This is a prototyping repo to get [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) running from a Tauri2 desktop app, since I am planning to integrate this into the language learning app I'm building: [Fluensy](https://fluensy.app)
 
-Right now I mainly need it on macOS, so there is a heavy bias towards that platform. But ideally I want this to work on all platforms.
+Right now I mainly need it on macOS, so there is a heavy bias towards that platform. 
 
 ## P0 Requirements
 
@@ -11,7 +21,6 @@ Right now I mainly need it on macOS, so there is a heavy bias towards that platf
 ## P1 Requirements
 
 1. Other LLM/TTS models
-2. Linux/Windows
 
 ## Supported approaches
 
@@ -27,9 +36,11 @@ This is the approach used for Gemma 4 in a sibling prototype ([tauri2-local-llm]
 
 1. llama.cpp does not yet support Qwen3-TTS — there's an open issue tracking support. Until that lands, this option is blocked for this project.
 
-### Option 2: mlx-swift-qwen3-tts (hamptus) - looks best so far
+### Option 2: mlx-swift-qwen3-tts (hamptus) - implemented via Swift/MLX bridge
 
 Repo: [hamptus/mlx-swift-qwen3-tts](https://github.com/hamptus/mlx-swift-qwen3-tts)
+
+Local implementation: [hamptus-mlx-swift-qwen3-tts](./hamptus-mlx-swift-qwen3-tts) and [qwen3-tts-swift-rs](./qwen3-tts-swift-rs)
 
 This one has substantially more visibility than the alternative below. The author first posted an iPhone demo to r/LocalLLaMA, where people tested it on Macs and iPhones, and that thread became the announcement for the Swift package. That's a positive signal because multiple users tested it, reported bugs, the author replied, and improvements came out of community feedback. It feels like a real project instead of just a code dump.
 
@@ -70,13 +81,4 @@ Academically stronger than hamptus's project, but with much less community testi
 
 1. Would need to confirm Qwen3-TTS model support directly in mlx-rs rather than going through a Swift wrapper
 
-## Current leaning
 
-Without benchmarking, [hamptus/mlx-swift-qwen3-tts](https://github.com/hamptus/mlx-swift-qwen3-tts) looks like the best option — it's not clearly better in model quality, but it feels more like an SDK meant to be embedded into another application, whereas AtomGradient feels more like a faithful MLX implementation plus research. Plan is to prototype both, then benchmark:
-
-* startup time
-* memory usage
-* audio quality
-* streaming behavior
-* API cleanliness
-* cancellation support
