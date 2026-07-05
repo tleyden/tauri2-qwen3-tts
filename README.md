@@ -24,7 +24,7 @@ This is the approach used for Gemma 4 in a sibling prototype ([tauri2-local-llm]
 
 #### Risks
 
-1. llama.cpp does not yet support Qwen3-TTS — there's an open issue tracking support. Until that lands, this option is blocked for this project AFAIK.
+1. llama.cpp does not yet support Qwen3-TTS — there's an open issue tracking support. Until that lands, this option is blocked for this project AFAIK.  See [llama.cpp #21956](https://github.com/ggml-org/llama.cpp/issues/21956)
 
 ### Option 2: mlx-swift-qwen3-tts (hamptus) - implemented via Swift/MLX bridge
 
