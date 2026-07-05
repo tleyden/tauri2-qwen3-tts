@@ -158,14 +158,57 @@ surface area (text in, bytes out, optionally polled in a loop), we don't expect 
 - The packaged, signed `.app` runs standalone (double-click), not only from a terminal with
   hand-set environment variables.
 
-## Open questions to resolve during execution
+## Open questions — resolved during execution (2026-07-05)
 
-1. Does `mlx-swift-qwen3-tts` bundle any raw `.metal` source requiring SwiftPM resource processing,
-   or does it compile shaders from embedded strings / ship a precompiled `metallib` as an
-   already-correctly-declared package resource? (Determines whether Step 4 is ever needed.)
-2. Is polling latency (Step 5, option 1) low enough for acceptable time-to-first-audio, or is the
-   callback/function-pointer approach (option 2) required?
-3. Minimum macOS version to target in `SwiftLinker::new(...)` and `Package.swift` — `vision-swift`
-   uses `10.15`; MLX likely requires a materially newer minimum (`swift-only-poc` targets
-   `.macOS(.v14)`), which changes the `SwiftLinker::new(...)` argument and `Package.swift`
-   `platforms:` entry accordingly.
+1. **Resolved, answer was "yes, needs Step 4."** `mlx-swift`'s `Cmlx` target declares zero
+   `resources:` in its `Package.swift` and ships `.metal` kernel sources as plain target files,
+   relying entirely on Xcode's built-in Metal-compiler build phase. A plain `swift build` compiles
+   everything else fine but produces **no** `.metallib`/`.bundle` anywhere — confirmed by
+   `find .build -iname '*.metallib'` returning nothing after a successful build — and the resulting
+   binary fails at runtime with `MLX error: Failed to load the default metallib.`
+   Fix shipped in `qwen3-tts-swift-rs/build.rs`: keep `swift build` (via `SwiftLinker`) for
+   compiling/linking the static library — that part works — and separately invoke `xcodebuild`
+   *only* to obtain the compiled `mlx-swift_Cmlx.bundle/Contents/Resources/default.metallib`
+   (xcodebuild doesn't emit a linkable consolidated `.a` for headless SwiftPM library builds, so it
+   can't replace `swift build` for linking, but it does run the Metal-compiler phase correctly).
+   The metallib is embedded into the crate via `include_bytes!` and written out next to the running
+   executable at startup (`ensure_metallib_installed()`), matching MLX's colocated-with-binary
+   lookup (`mlx/backend/metal/device.cpp`'s `load_colocated_library`). This works for dev/example
+   builds; a signed, installed `.app` may not have a writable bundle directory at runtime, which is
+   a packaging question for Step 6/7, not yet solved.
+2. **Not yet reached.** Streaming (Step 5) wasn't implemented in this pass — Steps 1–3 and 6 (load,
+   non-streaming synthesize, Tauri wiring) were the focus. Still open.
+3. **Resolved.** `SwiftLinker::new("14.0")` + `.macOS(.v14)` in `Package.swift`, matching
+   `swift-only-poc`, not `vision-swift`'s `10.15`.
+
+## Additional gaps found during implementation (not anticipated in the original plan)
+
+- **`libc++` must be linked explicitly.** MLX's core is C++ (exceptions, RTTI); `vision-swift` is
+  ObjC/Swift-only and never needed this. Without `cargo:rustc-link-lib=c++` in `build.rs`, the
+  final link fails with undefined symbols like `__cxa_throw` / `__gxx_personality_v0`.
+- **Swift concurrency runtime needs an explicit rpath, and it does not propagate to consumers.**
+  Qwen3TTS uses `async`/`AsyncStream` (unlike `vision-swift`), which pulls in
+  `libswift_Concurrency.dylib`. `SwiftLinker` sets up `-L` search paths for linking but never an
+  `-rpath` for runtime lookup, so the binary fails to launch with
+  `Library not loaded: @rpath/libswift_Concurrency.dylib`. Fixed by emitting
+  `cargo:rustc-link-arg=-Wl,-rpath,/usr/lib/swift`. Critically, **this had to be added twice** — once
+  in `qwen3-tts-swift-rs/build.rs` (for its own example binary) and again in
+  `hamptus-mlx-swift-qwen3-tts/src-tauri/build.rs` (for the Tauri binary), because
+  `cargo:rustc-link-arg` (unlike `rustc-link-lib`/`rustc-link-search`) only applies to the emitting
+  package's own targets — it does not propagate transitively to a downstream binary crate. Any
+  future consumer of `qwen3-tts-swift-rs` must repeat this line in its own `build.rs`.
+
+## What's actually built (2026-07-05)
+
+- `qwen3-tts-swift-rs/` — the crate, following Steps 1–4. `cargo run --example synthesize` produces
+  a real, valid 3.6s mono 24kHz WAV file end-to-end (verified with `file` and Python's `wave`
+  module).
+- `hamptus-mlx-swift-qwen3-tts/src-tauri` — depends on it (macOS-only, per the plan's hard
+  constraint), loads the model at startup, exposes `available_speakers`/`synthesize_speech` Tauri
+  commands. Verified via `bun run tauri dev` logs: app launches, model loads, no dyld errors.
+- `hamptus-mlx-swift-qwen3-tts/src/App.tsx` — minimal test harness (speaker picker, text input,
+  synthesize button, `<audio>` playback). **Not manually clicked through** — no GUI-automation tool
+  was available to drive the actual Tauri window, so the button-click → audio-playback round trip
+  in the running app is unverified beyond the command/model-load logs. Manual verification still
+  needed.
+- Streaming (Step 5) not yet attempted.
