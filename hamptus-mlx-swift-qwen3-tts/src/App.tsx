@@ -1,49 +1,72 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
+import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [speakers, setSpeakers] = useState<string[]>([]);
+  const [speaker, setSpeaker] = useState("");
+  const [text, setText] = useState(
+    "Hello from the Rust side of the Qwen three T T S bridge."
+  );
+  const [audioUrl, setAudioUrl] = useState("");
+  const [status, setStatus] = useState("");
 
-  async function greet() {
-    // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-    setGreetMsg(await invoke("greet", { name }));
+  useEffect(() => {
+    invoke<string[]>("available_speakers")
+      .then((names) => {
+        setSpeakers(names);
+        setSpeaker(names[0] ?? "");
+        setStatus("");
+      })
+      .catch((err) => setStatus(`Failed to load speakers: ${err}`));
+  }, []);
+
+  async function synthesize() {
+    setStatus("Synthesizing...");
+    try {
+      const base64Wav = await invoke<string>("synthesize_speech", {
+        text,
+        speaker,
+      });
+      setAudioUrl(`data:audio/wav;base64,${base64Wav}`);
+      setStatus("Done.");
+    } catch (err) {
+      setStatus(`Synthesis failed: ${err}`);
+    }
   }
 
   return (
     <main className="container">
-      <h1>Welcome to Tauri + React</h1>
+      <h1>Qwen3-TTS Rust/Swift bridge test harness</h1>
 
       <div className="row">
-        <a href="https://vite.dev" target="_blank">
-          <img src="/vite.svg" className="logo vite" alt="Vite logo" />
-        </a>
-        <a href="https://tauri.app" target="_blank">
-          <img src="/tauri.svg" className="logo tauri" alt="Tauri logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+        <select value={speaker} onChange={(e) => setSpeaker(e.target.value)}>
+          {speakers.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
       </div>
-      <p>Click on the Tauri, Vite, and React logos to learn more.</p>
 
       <form
         className="row"
         onSubmit={(e) => {
           e.preventDefault();
-          greet();
+          synthesize();
         }}
       >
         <input
-          id="greet-input"
-          onChange={(e) => setName(e.currentTarget.value)}
-          placeholder="Enter a name..."
+          value={text}
+          onChange={(e) => setText(e.currentTarget.value)}
+          style={{ width: "24em" }}
         />
-        <button type="submit">Greet</button>
+        <button type="submit">Synthesize</button>
       </form>
-      <p>{greetMsg}</p>
+
+      <p>{status}</p>
+
+      {audioUrl && <audio controls autoPlay src={audioUrl} />}
     </main>
   );
 }
