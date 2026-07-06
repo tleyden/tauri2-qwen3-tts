@@ -29,15 +29,24 @@ fn available_speakers() -> Result<Vec<String>, String> {
 /// frontend can play it directly via a `data:audio/wav;base64,...` URL.
 #[cfg(target_os = "macos")]
 #[tauri::command]
-fn synthesize_speech(text: String, speaker: String) -> Result<String, String> {
-    qwen3_tts_swift_rs::synthesize(&text, &speaker)
+fn synthesize_speech(
+    text: String,
+    speaker: String,
+    chunk_size: Option<usize>,
+) -> Result<String, String> {
+    let chunk_size = chunk_size.unwrap_or(qwen3_tts_swift_rs::DEFAULT_CHUNK_SIZE);
+    qwen3_tts_swift_rs::synthesize_with_chunk_size(&text, &speaker, chunk_size)
         .map(|bytes| base64::engine::general_purpose::STANDARD.encode(bytes))
         .ok_or_else(|| "synthesis failed -- see stderr for details".to_string())
 }
 
 #[cfg(not(target_os = "macos"))]
 #[tauri::command]
-fn synthesize_speech(_text: String, _speaker: String) -> Result<String, String> {
+fn synthesize_speech(
+    _text: String,
+    _speaker: String,
+    _chunk_size: Option<usize>,
+) -> Result<String, String> {
     Err("Qwen3-TTS bridge is only available on macOS".to_string())
 }
 

@@ -23,9 +23,12 @@ fn main() {
         .map(PathBuf::from)
         .unwrap_or_else(|_| default_model_path());
     let speaker = env::var("SPEAKER").unwrap_or_else(|_| "Aiden".to_string());
-    let text = env::var("TEXT").unwrap_or_else(|_| {
-        "Hello from the Rust side of the Qwen three T T S bridge.".to_string()
-    });
+    let text = env::var("TEXT")
+        .unwrap_or_else(|_| "Hello from the Rust side of the Qwen three T T S bridge.".to_string());
+    let chunk_size = env::var("CHUNK_SIZE")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .unwrap_or(qwen3_tts_swift_rs::DEFAULT_CHUNK_SIZE);
 
     let metallib_path = qwen3_tts_swift_rs::ensure_metallib_installed()
         .expect("failed to write mlx.metallib next to the current executable");
@@ -34,9 +37,7 @@ fn main() {
     println!("Loading model: {}", model_path.display());
     let load_start = std::time::Instant::now();
     let loaded = qwen3_tts_swift_rs::load_model(
-        model_path
-            .to_str()
-            .expect("model path must be valid UTF-8"),
+        model_path.to_str().expect("model path must be valid UTF-8"),
     );
     if !loaded {
         eprintln!("load_model failed -- see Swift stderr output above");
@@ -49,10 +50,11 @@ fn main() {
     }
 
     println!("Speaker: {speaker}");
+    println!("Chunk size: {chunk_size}");
     println!("Text: {text}");
 
     let gen_start = std::time::Instant::now();
-    let wav_bytes = qwen3_tts_swift_rs::synthesize(&text, &speaker);
+    let wav_bytes = qwen3_tts_swift_rs::synthesize_with_chunk_size(&text, &speaker, chunk_size);
     let gen_seconds = gen_start.elapsed().as_secs_f64();
 
     let Some(wav_bytes) = wav_bytes else {

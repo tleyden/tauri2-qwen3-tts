@@ -7,8 +7,9 @@ function App() {
   const [speakers, setSpeakers] = useState<string[]>([]);
   const [speaker, setSpeaker] = useState("");
   const [text, setText] = useState(
-    "Hello from the Rust side of the Qwen three T T S bridge."
+    "Hello from the Rust side of the Qwen three T T S bridge.",
   );
+  const [chunkSize, setChunkSize] = useState(500);
   const [audioUrl, setAudioUrl] = useState("");
   const [status, setStatus] = useState("");
 
@@ -23,11 +24,16 @@ function App() {
   }, []);
 
   async function synthesize() {
-    setStatus("Synthesizing...");
+    setStatus(
+      chunkSize === 0
+        ? "Synthesizing without chunking..."
+        : `Synthesizing in ${chunkSize}-character chunks...`,
+    );
     try {
       const base64Wav = await invoke<string>("synthesize_speech", {
         text,
         speaker,
+        chunkSize,
       });
       setAudioUrl(`data:audio/wav;base64,${base64Wav}`);
       setStatus("Done.");
@@ -48,6 +54,20 @@ function App() {
             </option>
           ))}
         </select>
+      </div>
+      <div className="row settings-row">
+        <label htmlFor="chunk-size">Chunk size</label>
+        <input
+          id="chunk-size"
+          type="number"
+          min="0"
+          max="2000"
+          step="50"
+          value={chunkSize}
+          onChange={(e) =>
+            setChunkSize(Math.max(0, Number(e.currentTarget.value) || 0))
+          }
+        />
       </div>
 
       <form

@@ -49,6 +49,15 @@
   justify-content: center;
 }
 
+.settings-row {
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-row input {
+  width: 120px;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
