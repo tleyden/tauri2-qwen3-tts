@@ -3,6 +3,11 @@ import { invoke } from "@tauri-apps/api/core";
 import "./App.css";
 import podcastScript from "../swift-only-poc/test_data/podcast_script.txt?raw";
 
+type SynthesisResponse = {
+  base64Wav: string;
+  filePath: string;
+};
+
 function App() {
   const [speakers, setSpeakers] = useState<string[]>([]);
   const [speaker, setSpeaker] = useState("");
@@ -11,6 +16,7 @@ function App() {
   );
   const [chunkSize, setChunkSize] = useState(500);
   const [audioUrl, setAudioUrl] = useState("");
+  const [audioFilePath, setAudioFilePath] = useState("");
   const [status, setStatus] = useState("");
 
   useEffect(() => {
@@ -24,19 +30,22 @@ function App() {
   }, []);
 
   async function synthesize() {
+    setAudioUrl("");
+    setAudioFilePath("");
     setStatus(
       chunkSize === 0
         ? "Synthesizing without chunking..."
         : `Synthesizing in ${chunkSize}-character chunks...`,
     );
     try {
-      const base64Wav = await invoke<string>("synthesize_speech", {
+      const result = await invoke<SynthesisResponse>("synthesize_speech", {
         text,
         speaker,
         chunkSize,
       });
-      setAudioUrl(`data:audio/wav;base64,${base64Wav}`);
-      setStatus("Done.");
+      setAudioUrl(`data:audio/wav;base64,${result.base64Wav}`);
+      setAudioFilePath(result.filePath);
+      setStatus("Done. Press play to listen.");
     } catch (err) {
       setStatus(`Synthesis failed: ${err}`);
     }
@@ -96,7 +105,14 @@ function App() {
 
       <p>{status}</p>
 
-      {audioUrl && <audio controls autoPlay src={audioUrl} />}
+      {audioFilePath && (
+        <p className="file-path">
+          <span>Saved to</span>
+          <code>{audioFilePath}</code>
+        </p>
+      )}
+
+      {audioUrl && <audio controls src={audioUrl} />}
     </main>
   );
 }

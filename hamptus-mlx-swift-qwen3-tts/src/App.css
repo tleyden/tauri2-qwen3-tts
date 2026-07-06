@@ -157,6 +157,22 @@ p {
   text-align: center;
 }
 
+.file-path {
+  display: flex;
+  min-height: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  overflow-wrap: anywhere;
+  font-size: 0.9em;
+}
+
+.file-path code {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    monospace;
+}
+
 audio {
   width: 100%;
 }
