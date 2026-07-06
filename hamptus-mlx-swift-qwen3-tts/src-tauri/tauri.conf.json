@@ -5,7 +5,7 @@
   "identifier": "com.tleyden.hamptus-mlx-swift-qwen3-tts",
   "build": {
     "beforeDevCommand": "bun run dev",
-    "devUrl": "http://localhost:1420",
+    "devUrl": "http://localhost:1425",
     "beforeBuildCommand": "bun run build",
     "frontendDist": "../dist"
   },
@@ -13,8 +13,10 @@
     "windows": [
       {
         "title": "hamptus-mlx-swift-qwen3-tts",
-        "width": 800,
-        "height": 600
+        "width": 900,
+        "height": 760,
+        "minWidth": 760,
+        "minHeight": 620
       }
     ],
     "security": {

@@ -14,7 +14,10 @@ Design/history: [`../docs/2026-07-05-rust-swift-bridge-plan.md`](../docs/2026-07
 
 - `load_model(model_path: &str) -> bool`
 - `available_speakers() -> Option<Vec<String>>`
-- `synthesize(text: &str, speaker: &str) -> Option<Vec<u8>>` — returns a complete WAV file
+- `synthesize(text: &str, speaker: &str) -> Option<Vec<u8>>` — returns a complete WAV file,
+  using the default 500-character chunk size
+- `synthesize_with_chunk_size(text: &str, speaker: &str, chunk_size: usize) -> Option<Vec<u8>>` —
+  uses character-based chunking; pass `0` to preserve the old single-call behavior
 - `ensure_metallib_installed() -> std::io::Result<PathBuf>` — must be called once before
   `load_model`; writes the embedded MLX Metal shader library next to the current executable (see
   "Why build.rs looks like this" below)
@@ -43,7 +46,7 @@ This loads the model, prints available speakers, synthesizes a default sentence,
 result to a temp `.wav` file. Override defaults with env vars:
 
 ```bash
-MODEL_PATH=/path/to/model SPEAKER=Dylan TEXT="Testing one two three" PLAY=1 cargo run --example synthesize
+MODEL_PATH=/path/to/model SPEAKER=Dylan TEXT="Testing one two three" CHUNK_SIZE=500 PLAY=1 cargo run --example synthesize
 ```
 
 (`PLAY=1` plays the result with `afplay`.)
@@ -62,7 +65,7 @@ is Swift/ObjC-only and synchronous — no C++, no async):
    declares no SwiftPM `resources:` and relies on Xcode's Metal-compiler build phase to compile its
    `.metal` kernel sources. `swift build` compiles everything else fine but silently skips that
    step, and the binary crashes at runtime with `MLX error: Failed to load the default metallib.`
-   Fix: keep `swift build` for compiling/linking (it works), and separately run `xcodebuild` *only*
+   Fix: keep `swift build` for compiling/linking (it works), and separately run `xcodebuild` _only_
    to extract `mlx-swift_Cmlx.bundle/Contents/Resources/default.metallib` (xcodebuild itself can't
    replace `swift build` for linking — it emits per-target `.o` files, not a consolidated `.a`, for
    headless SwiftPM library builds). The metallib gets embedded into this crate via
@@ -72,7 +75,7 @@ is Swift/ObjC-only and synchronous — no C++, no async):
    `cargo:rustc-link-lib=c++`, the final link fails with undefined symbols like `__cxa_throw`.
 3. **The Swift concurrency runtime needs an explicit rpath.** Qwen3TTS uses `async`/`AsyncStream`,
    which pulls in `libswift_Concurrency.dylib`; without
-   `cargo:rustc-link-arg=-Wl,-rpath,/usr/lib/swift`, the binary fails to *launch* with
+   `cargo:rustc-link-arg=-Wl,-rpath,/usr/lib/swift`, the binary fails to _launch_ with
    `Library not loaded: @rpath/libswift_Concurrency.dylib`.
    **This does not propagate to consumers** — `cargo:rustc-link-arg` (unlike `rustc-link-lib`/
    `rustc-link-search`) only applies to the emitting package's own targets. Any binary crate that

@@ -21,15 +21,28 @@
   -webkit-text-size-adjust: 100%;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+}
+
 .container {
   box-sizing: border-box;
-  min-height: 100vh;
+  height: 100vh;
+  min-height: 0;
   margin: 0 auto;
-  padding: 32px;
+  padding: 24px 32px;
   width: min(100%, 1100px);
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
+  overflow-y: auto;
   text-align: left;
 }
 
@@ -49,6 +62,15 @@
   justify-content: center;
 }
 
+.settings-row {
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-row input {
+  width: 120px;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -60,8 +82,10 @@ a:hover {
 }
 
 h1 {
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  line-height: 1.2;
   text-align: center;
-  margin: 0 0 8px;
+  margin: 0;
 }
 
 input,
@@ -129,8 +153,9 @@ button {
 .text-input {
   box-sizing: border-box;
   width: 100%;
-  min-height: 55vh;
-  flex: 1;
+  height: clamp(180px, 34vh, 320px);
+  min-height: 180px;
+  flex: 0 1 auto;
   resize: vertical;
   overflow-y: auto;
   line-height: 1.5;
@@ -146,6 +171,22 @@ p {
   min-height: 24px;
   margin: 0;
   text-align: center;
+}
+
+.file-path {
+  display: flex;
+  min-height: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  overflow-wrap: anywhere;
+  font-size: 0.9em;
+}
+
+.file-path code {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    monospace;
 }
 
 audio {
