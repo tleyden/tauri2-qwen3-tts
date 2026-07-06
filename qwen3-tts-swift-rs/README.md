@@ -15,7 +15,7 @@ Design/history: [`../docs/2026-07-05-rust-swift-bridge-plan.md`](../docs/2026-07
 - `load_model(model_path: &str) -> bool`
 - `available_speakers() -> Option<Vec<String>>`
 - `synthesize(text: &str, speaker: &str) -> Option<Vec<u8>>` — returns a complete WAV file,
-  using the default 500-character chunk size
+  using the default 200-character chunk size
 - `synthesize_with_chunk_size(text: &str, speaker: &str, chunk_size: usize) -> Option<Vec<u8>>` —
   uses character-based chunking; pass `0` to preserve the old single-call behavior
 - `ensure_metallib_installed() -> std::io::Result<PathBuf>` — must be called once before
@@ -46,7 +46,7 @@ This loads the model, prints available speakers, synthesizes a default sentence,
 result to a temp `.wav` file. Override defaults with env vars:
 
 ```bash
-MODEL_PATH=/path/to/model SPEAKER=Dylan TEXT="Testing one two three" CHUNK_SIZE=500 PLAY=1 cargo run --example synthesize
+MODEL_PATH=/path/to/model SPEAKER=Dylan TEXT="Testing one two three" CHUNK_SIZE=200 PLAY=1 cargo run --example synthesize
 ```
 
 (`PLAY=1` plays the result with `afplay`.)

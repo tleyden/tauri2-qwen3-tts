@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use swift_rs::{swift, SRData, SRString};
 
-pub const DEFAULT_CHUNK_SIZE: usize = 500;
+pub const DEFAULT_CHUNK_SIZE: usize = 200;
 
 /// The default.metallib produced by xcodebuild's Metal-compiler build phase (see build.rs --
 /// plain `swift build` never produces this, since mlx-swift's Cmlx target relies on Xcode

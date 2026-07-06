@@ -14,7 +14,7 @@ function App() {
   const [text, setText] = useState(
     "Hello from the Rust side of the Qwen three T T S bridge.",
   );
-  const [chunkSize, setChunkSize] = useState(500);
+  const [chunkSize, setChunkSize] = useState(200);
   const [audioUrl, setAudioUrl] = useState("");
   const [audioFilePath, setAudioFilePath] = useState("");
   const [status, setStatus] = useState("");
