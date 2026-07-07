@@ -12,7 +12,7 @@ This is part of a series of prototyping repos:
 2. (this repo) [Text-to-speech local model from Tauri/rust](https://github.com/tleyden/tauri2-qwen3-tts)
 3. [Gemma4-12b from Tauri/rust](https://github.com/tleyden/tauri2-local-llm)
 
-These were created as part of prototyping the different options for use in a few apps I'm building: [Fluensy](https://fluensy.app) (foreign language learning app for professionals) and [brain3](https://github.com/tleyden/brain3) (MCP server for markdown vaults)
+I created these while prototyping local AI options for two apps I'm building: [Fluensy](https://fluensy.app) (language learning for professionals) and [brain3](https://github.com/tleyden/brain3) (MCP server for markdown vaults).
 
 ## P0 Requirements
 
