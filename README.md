@@ -10,11 +10,18 @@ This is a prototyping repo to get [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TT
 
 Right now I mainly need it on macOS, so there is a heavy bias towards that platform. 
 
+This is part of a series of prototyping repos:
+
+1. [Local model speech-to-text transcription library running from a Tauri2 desktop app](https://github.com/tleyden/tauri2-stt)
+2. (this repo) [Text-to-speech local model from Tauri/rust](https://github.com/tleyden/tauri2-qwen3-tts)
+3. [Gemma4-12b from Tauri/rust](https://github.com/tleyden/tauri2-local-llm)
+
+These were created as part of prototyping the different options for use in a few apps I'm building: [Fluensy](https://fluensy.app) (foreign language learning app for professionals) and [brain3](https://github.com/tleyden/brain3) (MCP server for markdown vaults)
+
 ## P0 Requirements
 
 1. Supports Qwen3-TTS
 2. Runs on macOS
-
 
 ## Design notes - best integration strategy?
 
@@ -26,7 +33,7 @@ This is the approach used for Gemma 4 in a sibling prototype ([tauri2-local-llm]
 
 1. llama.cpp does not yet support Qwen3-TTS — there's an open issue tracking support. Until that lands, this option is blocked for this project AFAIK.  See [llama.cpp #21956](https://github.com/ggml-org/llama.cpp/issues/21956)
 
-### Option 2: mlx-swift-qwen3-tts (hamptus) - implemented via Swift/MLX bridge
+### Option 2: mlx-swift-qwen3-tts (hamptus) - implemented via Swift/MLX bridge, ⚠️ but getting garbled audio
 
 Repo: [hamptus/mlx-swift-qwen3-tts](https://github.com/hamptus/mlx-swift-qwen3-tts)
 
@@ -52,6 +59,7 @@ bun run tauri dev
 
 1. More complicated toolchain than a pure Rust/FFI approach (Swift + MLX)
 2. Would need a Rust <-> Swift bridge to call from a Tauri2 (Rust) backend
+3. I am getting completely garbled audio: https://github.com/tleyden/tauri2-qwen3-tts/issues/3
 
 ### Option 3: swift-qwen3-tts (AtomGradient)
 
@@ -79,3 +87,23 @@ Repo: [AtomGradient/swift-qwen3-tts](https://github.com/AtomGradient/swift-qwen3
 #### Risks
 
 1. Would need to confirm Qwen3-TTS model support directly in mlx-rs rather than going through a Swift wrapper
+
+
+### Option 5: Supertonic via supertonic-rs  (implemented)
+
+Repo: https://github.com/TheoSlater/supertonic-rs
+
+#### Strengths
+
+1. No GPU required
+2. Small/fast model
+3. Multi-lingual 
+
+#### Risks
+
+1. License requires attribution in commercial apps
+
+
+## Conclusion
+
+I ended up going with Supertonic via supertonic-rs due to https://github.com/tleyden/tauri2-qwen3-tts/issues/3.  There's no code example in this repo, because https://github.com/TheoSlater/supertonic-rs just works out of the box.
