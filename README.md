@@ -6,10 +6,6 @@
   <img src="./AppScreenshot.png" alt="Screenshot of the Qwen3-TTS Tauri prototype app" width="900">
 </p>
 
-This is a prototyping repo to get [Qwen3-TTS](https://github.com/QwenLM/Qwen3-TTS) running from a Tauri2 desktop app, since I am planning to integrate this into the language learning app I'm building: [Fluensy](https://fluensy.app)
-
-Right now I mainly need it on macOS, so there is a heavy bias towards that platform. 
-
 This is part of a series of prototyping repos:
 
 1. [Local model speech-to-text transcription library running from a Tauri2 desktop app](https://github.com/tleyden/tauri2-stt)
